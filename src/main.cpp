@@ -5,7 +5,7 @@
 #include <JC_Button.h>
 
 #define BUTTON_PIN 3
-#define POT_PIN 18
+#define POT_PIN A0
 
 PotMonitor volumePot(POT_PIN, 12);
 
@@ -15,8 +15,6 @@ DFRobotDFPlayerMini myDFPlayer;
 Button changeButton(BUTTON_PIN, 25, false);
 
 int fileCount = 0;
-int playCount = 0;
-bool soundPlaying = false;
 int soundIdx = 1;
 
 long map2(long x, long in_min, long in_max, long out_min, long out_max)
@@ -30,6 +28,7 @@ void setup()
 
   mySoftwareSerial.begin(9600);
   Serial.begin(115200);
+  delay(3000);
 
   Serial.println();
   Serial.println(F("DFRobot DFPlayer Mini Demo"));
@@ -51,18 +50,15 @@ void setup()
   myDFPlayer.volume(15); //Set volume value. From 0 to 30
 
   fileCount = myDFPlayer.readFileCounts();
-
-  Serial.print("file count = ");
   Serial.println(fileCount);
-
-  delay(500);
+  Serial.print("file count = ");
 }
 
 void StartSoundPlayer()
 {
-  soundPlaying = true;
-  playCount = 1;
-  delay(500);
+  myDFPlayer.stop();
+
+  delay(10);
   myDFPlayer.play(soundIdx); //Play the first mp3
   soundIdx++;
   if (soundIdx > fileCount)
@@ -73,7 +69,6 @@ void StartSoundPlayer()
 
 void StopSoundPlayer()
 {
-  soundPlaying = false;
   myDFPlayer.stop();
 }
 
@@ -85,40 +80,21 @@ void loop()
   if (volumePot.hasUpdated())
   {
     //Serial.println(speedPotentiometer.getValue());
-    long volume = map2(volumePot.getValue(), 0, 880, 0, 30);
+    long volume = map2(volumePot.getValue(), 0, 1024, 0, 30);
     Serial.println(volume);
     myDFPlayer.volume(volume);
   }
 
-  if (myDFPlayer.available() && soundPlaying == true)
-  {
-
-    if (myDFPlayer.readType() == DFPlayerPlayFinished && playCount < fileCount)
-    {
-
-      delay(500);
-      myDFPlayer.next();
-      soundIdx++;
-
-      if (soundIdx > fileCount)
-      {
-        soundIdx = 1;
-      }
-      Serial.print("count = ");
-      Serial.println(playCount);
-
-      playCount += 1;
-    }
-    else
-    {
-    }
-  }
-
   changeButton.read();
+  if (changeButton.wasReleased())
+  {
+    Serial.println("was pressed");
+    StartSoundPlayer();
+  }
   // Serial.println(digitalRead(BUTTON_PIN));
   // if (debouncer.read() == LOW && soundPlaying == false)
   // {
-  //   StartSoundPlayer();
+  //
   // }
 
   // if (debouncer.read() == HIGH && soundPlaying == true)
